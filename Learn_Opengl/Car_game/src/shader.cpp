@@ -3,23 +3,23 @@
 #include "stb_image.h"
 
 Shader::Shader(const char* vertexPath, const char* fragmentPath) {
-    std::ifstream vertexFile(vertexPath);
-    std::ifstream fragmentFile(fragmentPath);
+    ifstream vertexFile(vertexPath);
+    ifstream fragmentFile(fragmentPath);
 
     if (!vertexFile.is_open() || !fragmentFile.is_open()) {
-        std::cerr << "Failed to open shader files!\n";
+        cerr << "Failed to open shader files!\n";
         return;
     }
 
-    std::stringstream vertexStream, fragmentStream;
+    stringstream vertexStream, fragmentStream;
     vertexStream << vertexFile.rdbuf();
     fragmentStream << fragmentFile.rdbuf();
 
     vertexFile.close();
     fragmentFile.close();
 
-    std::string vertexCode = vertexStream.str();
-    std::string fragmentCode = fragmentStream.str();
+    string vertexCode = vertexStream.str();
+    string fragmentCode = fragmentStream.str();
 
     programID = createShader(vertexCode.c_str(), fragmentCode.c_str());
 }
@@ -31,7 +31,9 @@ void Shader::use() {
 unsigned int Shader::createShader(const char* vertexShader, const char* fragmentShader) {
     unsigned int vertex = compileShader(vertexShader, GL_VERTEX_SHADER);
     unsigned int fragment = compileShader(fragmentShader, GL_FRAGMENT_SHADER);
-
+ if (vertex == 0 || fragment == 0) {
+        return 0; // Shader compilation failed
+    }
     unsigned int shaderProgram = glCreateProgram();
     glAttachShader(shaderProgram, vertex);
     glAttachShader(shaderProgram, fragment);
@@ -61,7 +63,7 @@ unsigned int Shader::compileShader(const char* shaderCode, unsigned int type) {
     glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
     if (!success) {
         glGetShaderInfoLog(shader, 512, NULL, log);
-        std::cerr << "Shader Compilation Error: " << log << "\n";
+        cerr << "Shader Compilation Error: " << log << "\n";
     }
 
     return shader;
@@ -86,11 +88,65 @@ void Shader::texturing(const char* image_path, GLuint& textureID) {
         GLenum format = (channels == 4) ? GL_RGBA : GL_RGB;
         glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
-        std::cout << "Loaded texture: " << image_path << " (" << width << "x" << height << ")\n";
+        cout << "Loaded texture: " << image_path << " (" << width << "x" << height << ")\n";
     } else {
-        std::cerr << "Failed to load texture: " << image_path << "\n";
+        cerr << "Failed to load texture: " << image_path << "\n";
     }
     
     // Free the image memory
     stbi_image_free(data);
 }
+
+/*
+void Shader::processInput(GLFWwindow *window)  {
+    const float cameraspeed = 0.05f * ;
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        cameraPos += cameraspeed * cameraFront;
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        cameraPos -= cameraspeed * cameraFront;
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraspeed;
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraspeed;
+}
+
+void Shader::scroll_callback(GLFWwindow* widow, double xpos, double ypos){
+    fov -= (float)ypos;
+    if(fov < 1.0f)
+        fov = 1.0f;
+    if(fov > 45.0f)
+        fov = 45.0f;
+}
+
+void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
+    if(firstmouse) {
+        lastX = xpos;
+        lastY = ypos;
+        firstmouse = false;
+    }
+
+    float xoffset = xpos - lastX;
+    float yoffset = lastY - ypos;
+    lastX = xpos;
+    lastY = ypos;
+    
+    float sensitive = 0.05f;
+    xoffset *= sensitive;
+    yoffset *= sensitive;
+    
+    yaw += xoffset;
+    pitch += yoffset;
+
+    if (pitch > 89.0f)
+        pitch = 89.0f;
+    if (pitch < -89.0f)
+        pitch = -89.0f;
+        
+    glm::vec3 direction;
+    direction.x = cos(glm::radians(pitch)) * cos(glm::radians(yaw));
+    direction.y = sin(glm::radians(pitch));
+    direction.z = cos(glm::radians(pitch)) * sin(glm::radians(yaw));
+
+    cameraFront = glm::normalize(direction);
+}
+*/
